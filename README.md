@@ -1,15 +1,21 @@
-# Logseq Copilot
+# Logseq Copilot Plugin
 
-An intelligent assistant for Logseq note-taking and knowledge management.
+A Logseq plugin that integrates with OpenAI-compatible LLMs to provide AI assistance directly in your notes.
 
-## Description
+## Features
 
-Logseq Copilot is designed to enhance your note-taking experience in Logseq by providing intelligent assistance and automation capabilities.
+- Supports multiple LLM providers (currently Lingyiwanwu)
+- Dynamic model selection
+- Simple `/copilot` command interface
 
-## Getting Started
+## Installation
 
-More details coming soon...
+1. Download the plugin
+2. Enable it in Logseq Settings > Plugins
+3. Configure your API key in the plugin settings
 
-## License
+## Usage
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+1. Select any block in your notes
+2. Type `/copilot`
+3. The AI will respond to your block content
