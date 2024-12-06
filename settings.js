@@ -1,34 +1,67 @@
 // Default settings
 const DEFAULT_SETTINGS = {
-  provider: 'lingyiwanwu',
-  apiEndpoint: 'https://api.lingyiwanwu.com/v1',
+  provider: 'custom',
+  apiEndpoint: 'https://api.openai.com/v1',
   apiKey: '',
-  model: 'yi-lightning',
+  model: '',
   temperature: 0.7,
-  maxTokens: 1000
+  maxTokens: 1000,
+  isVerified: false
 }
 
 // Predefined API providers
 const API_PROVIDERS = {
+  'openai': {
+    name: 'OpenAI',
+    endpoint: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-3.5-turbo',
+    models: ['gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k']
+  },
+  'anthropic': {
+    name: 'Anthropic',
+    endpoint: 'https://api.anthropic.com/v1',
+    defaultModel: 'claude-2',
+    models: ['claude-2', 'claude-instant-1']
+  },
+  'gemini': {
+    name: 'Google Gemini',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: 'gemini-pro',
+    models: ['gemini-pro']
+  },
   'lingyiwanwu': {
     name: 'Lingyiwanwu',
     endpoint: 'https://api.lingyiwanwu.com/v1',
     defaultModel: 'yi-lightning',
     models: [] // Will be populated dynamically
   },
-  custom: {
+  'custom': {
     name: 'Custom Provider',
     endpoint: '',
-    defaultModel: ''
+    defaultModel: '',
+    models: [] // Will be populated dynamically
   }
 }
 
 // Settings management
 let settings = {...DEFAULT_SETTINGS}
 
-async function fetchAvailableModels() {
+async function verifyApiKey() {
+  if (!settings.apiKey || !settings.apiEndpoint) {
+    logseq.App.showMsg('Please enter API endpoint and key first', 'warning')
+    return false
+  }
+
   try {
-    const response = await axios.get(`${DEFAULT_SETTINGS.apiEndpoint}/models`, {
+    // Skip model fetching for providers with fixed model lists
+    if (['anthropic', 'gemini'].includes(settings.provider)) {
+      settings.isVerified = true
+      await logseq.updateSettings({ isVerified: true })
+      logseq.App.showMsg('API key verified successfully!', 'success')
+      return true
+    }
+
+    const response = await axios.get(`${settings.apiEndpoint}/models`, {
       headers: {
         'Authorization': `Bearer ${settings.apiKey}`,
         'Content-Type': 'application/json'
@@ -36,12 +69,19 @@ async function fetchAvailableModels() {
     })
     
     if (response.data && response.data.data) {
-      API_PROVIDERS.lingyiwanwu.models = response.data.data.map(model => model.id)
+      // Update models for the current provider
+      const currentProvider = settings.provider
+      API_PROVIDERS[currentProvider].models = response.data.data.map(model => model.id)
+      settings.isVerified = true
+      await logseq.updateSettings({ isVerified: true })
+      logseq.App.showMsg('API key verified and models loaded successfully!', 'success')
       return true
     }
   } catch (error) {
-    console.error('Failed to fetch models:', error)
-    logseq.App.showMsg('Failed to fetch available models. Using default model.', 'warning')
+    console.error('Verification failed:', error)
+    logseq.App.showMsg('API key verification failed: ' + (error.response?.data?.error?.message || error.message), 'error')
+    settings.isVerified = false
+    await logseq.updateSettings({ isVerified: false })
   }
   return false
 }
@@ -49,23 +89,20 @@ async function fetchAvailableModels() {
 async function initializeSettings() {
   const savedSettings = await logseq.settings
   settings = {...DEFAULT_SETTINGS, ...savedSettings}
-  
-  // If API key is set, try to fetch models
-  if (settings.apiKey) {
-    await fetchAvailableModels()
-  } else {
-    logseq.App.showMsg('Please set your Lingyiwanwu API key in plugin settings', 'warning')
-  }
 }
 
 // Register plugin settings
 function registerSettings() {
-  // Get current models or fallback to default
-  const availableModels = API_PROVIDERS.lingyiwanwu.models.length > 0 
-    ? API_PROVIDERS.lingyiwanwu.models 
-    : [DEFAULT_SETTINGS.model]
+  // Get current provider
+  const currentProvider = settings.provider
+  const provider = API_PROVIDERS[currentProvider]
+  
+  // Get available models based on verification status
+  const availableModels = settings.isVerified && provider.models.length > 0 
+    ? provider.models 
+    : []
 
-  logseq.useSettingsSchema([
+  const schema = [
     {
       key: "provider",
       type: "enum",
@@ -78,7 +115,7 @@ function registerSettings() {
     {
       key: "apiEndpoint",
       type: "string",
-      default: DEFAULT_SETTINGS.apiEndpoint,
+      default: provider.endpoint || DEFAULT_SETTINGS.apiEndpoint,
       title: "API Endpoint",
       description: "The endpoint for your LLM API"
     },
@@ -87,16 +124,27 @@ function registerSettings() {
       type: "string",
       default: DEFAULT_SETTINGS.apiKey,
       title: "API Key",
-      description: "Your Lingyiwanwu API key"
+      description: "Your API key"
     },
     {
+      key: "verifyButton",
+      type: "boolean",
+      default: false,
+      title: "Verify API Key",
+      description: "Click to verify API key and load available models"
+    }
+  ]
+
+  // Only show model selection if verified
+  if (settings.isVerified) {
+    schema.push({
       key: "model",
       type: "enum",
       enumChoices: availableModels,
       enumPicker: "select",
-      default: DEFAULT_SETTINGS.model,
+      default: provider.defaultModel || DEFAULT_SETTINGS.model,
       title: "Model",
-      description: "Lingyiwanwu model to use"
+      description: "Select the model to use"
     },
     {
       key: "temperature",
@@ -111,18 +159,50 @@ function registerSettings() {
       default: DEFAULT_SETTINGS.maxTokens,
       title: "Max Tokens",
       description: "Maximum tokens in response"
-    }
-  ])
+    })
+  }
+
+  logseq.useSettingsSchema(schema)
 }
 
-// Listen for settings changes to update models when API key is changed
+// Listen for settings changes
 logseq.onSettingsChanged(async (newSettings, oldSettings) => {
-  if (newSettings.apiKey && newSettings.apiKey !== oldSettings.apiKey) {
-    settings.apiKey = newSettings.apiKey
-    if (await fetchAvailableModels()) {
-      // Re-register settings to update the model choices
-      registerSettings()
+  // Handle verify button click
+  if (newSettings.verifyButton !== oldSettings.verifyButton) {
+    if (newSettings.verifyButton) {
+      if (await verifyApiKey()) {
+        // Re-register settings to show model selection
+        registerSettings()
+      }
+      // Reset the button
+      await logseq.updateSettings({ verifyButton: false })
     }
+    return
+  }
+
+  // Update settings
+  settings = newSettings
+  
+  // If provider changed, update endpoint and reset verification
+  if (newSettings.provider !== oldSettings.provider) {
+    const provider = API_PROVIDERS[newSettings.provider]
+    settings.apiEndpoint = provider.endpoint
+    settings.model = provider.defaultModel
+    settings.isVerified = false
+    await logseq.updateSettings({ 
+      apiEndpoint: provider.endpoint,
+      model: provider.defaultModel,
+      isVerified: false
+    })
+    registerSettings()
+  }
+  
+  // If API key or endpoint changed, reset verification
+  if (newSettings.apiKey !== oldSettings.apiKey || 
+      newSettings.apiEndpoint !== oldSettings.apiEndpoint) {
+    settings.isVerified = false
+    await logseq.updateSettings({ isVerified: false })
+    registerSettings()
   }
 })
 
