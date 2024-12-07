@@ -129,48 +129,91 @@ async function main() {
   await initializeSettings()
   registerSettings()
   
-  // Register the default copilot slash command
+  // Helper function to handle copilot commands
+  async function handleCopilotCommand(systemPrompt = null) {
+    const block = await logseq.Editor.getCurrentBlock()
+    if (!block) {
+      logseq.App.showMsg('Please select a block first', 'warning')
+      return
+    }
+
+    const response = await callLLMAPI(block.content, systemPrompt)
+    if (response) {
+      await logseq.Editor.insertBlock(block.uuid, response)
+    }
+  }
+
+  // Register the default copilot command
   logseq.Editor.registerSlashCommand(
     'copilot',
-    async () => {
-      const block = await logseq.Editor.getCurrentBlock()
-      if (!block) {
-        logseq.App.showMsg('Please select a block first', 'warning')
-        return
-      }
+    async () => handleCopilotCommand()
+  )
 
-      const response = await callLLMAPI(block.content)
-      if (response) {
-        await logseq.Editor.insertBlock(block.uuid, response)
+  // Register main copilot command
+  logseq.App.registerCommand(
+    "default-copilot",
+    {
+      key: "default-copilot",
+      label: "Run Copilot",
+      desc: "Run default Copilot command",
+      keybinding: {
+        mode: "global",
+        binding: "ctrl+shift+h"
       }
-    }
+    },
+    async () => handleCopilotCommand()
   )
 
   // Register custom prompt commands
+  const hotkeyMap = ['j', 'k', 'l']
   for (let i = 1; i <= 3; i++) {
     const promptKey = `Custom_Prompt_${i}`
+    
+    // Register slash command
     logseq.Editor.registerSlashCommand(
       `copilot${i}`,
       async () => {
-        const block = await logseq.Editor.getCurrentBlock()
-        if (!block) {
-          logseq.App.showMsg('Please select a block first', 'warning')
-          return
-        }
-
         const customPrompt = settings[promptKey]
         if (!customPrompt) {
           logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`, 'warning')
           return
         }
-
-        const response = await callLLMAPI(block.content, customPrompt)
-        if (response) {
-          await logseq.Editor.insertBlock(block.uuid, response)
+        await handleCopilotCommand(customPrompt)
+      }
+    )
+    
+    // Register command with customizable hotkey
+    logseq.App.registerCommand(
+      `copilot-custom-${i}`,
+      {
+        key: `copilot-custom-${i}`,
+        label: `Run Copilot with Custom Prompt ${i}`,
+        desc: `Run Copilot with Custom Prompt ${i}`,
+        keybinding: {
+          mode: "global",
+          binding: `ctrl+shift+${hotkeyMap[i-1]}`
         }
+      },
+      async () => {
+        const customPrompt = settings[promptKey]
+        if (!customPrompt) {
+          logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`, 'warning')
+          return
+        }
+        await handleCopilotCommand(customPrompt)
       }
     )
   }
+
+  // Add toolbar button
+  logseq.App.registerUIItem('toolbar', {
+    key: 'copilot-commands',
+    template: `
+      <div class="button">
+        <div data-on-click="runCopilot" class="icon">🤖</div>
+      </div>
+    `
+  })
 }
 
 // bootstrap
