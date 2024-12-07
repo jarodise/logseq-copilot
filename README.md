@@ -1,29 +1,30 @@
 # Logseq Copilot Plugin
 
-A Logseq plugin that integrates with OpenAI-compatible LLMs to provide AI assistance directly in your notes.
+A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI assistance directly in your notes.
 
 ## Features
 
-- 🤖 Powered by Lingyiwanwu (Yi) LLM API
-- 🔄 Dynamic model selection and temperature control
-- ⚡️ Quick access with keyboard shortcuts
+- 🔌 Works with OpenAI-compatible APIs (including local LM Studio)
 - 🎯 Custom system prompts for specialized tasks
-- 🔑 API key verification
-- 💬 Simple slash command interface
+- ⚡️ Quick access with keyboard shortcuts
+- 🎛️ Adjustable temperature and response length
+- ⌨️ Customizable hotkeys
 
 ## Installation
 
 1. Download the plugin
 2. Enable it in Logseq Settings > Plugins
-3. Configure your API key in the plugin settings
-4. Click "Verify Key" to ensure your API key works
+3. Configure your API settings
+4. Verify your API connection
 
 ## Configuration
 
 ### API Settings
-- **API Endpoint**: Default is https://api.lingyiwanwu.com/v1
-- **API Key**: Your Lingyiwanwu API key
-- **Model**: Choose from available Yi models
+- **API Endpoint**: Your OpenAI-compatible API endpoint
+  - For LM Studio (local): http://localhost:1234/v1
+  - For other providers: Check their API documentation
+- **API Key**: Your API key (can be empty for local LM Studio)
+- **Model**: Your model name (must match exactly, e.g., 'mistral-7b-instruct' for LM Studio)
 - **Temperature**: Control response randomness (0-1)
 - **Max Tokens**: Set maximum response length
 
@@ -57,14 +58,14 @@ Default shortcuts (can be customized in Settings > Shortcuts):
 - Custom Prompt 3: Ctrl+Shift+L
 
 ## Tips
-- Use Custom Prompt 1 for tasks you frequently do
+- Test your API connection with the verify button before use
 - Adjust temperature for more creative (higher) or focused (lower) responses
-- Verify your API key if you encounter connection issues
+- Use custom prompts for frequently repeated tasks
 - Customize hotkeys in Logseq's Settings > Shortcuts if you prefer different combinations
 
 ## Support
 If you encounter any issues or have suggestions, please:
-1. Check if your API key is verified
+1. Check if your API connection is verified
 2. Ensure you have selected a block before using commands
 3. Check the console for any error messages
 
