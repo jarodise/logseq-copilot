@@ -1,6 +1,6 @@
 {
   "name": "logseq-copilot",
-  "version": "0.0.1",
+  "version": "0.3.1",
   "description": "A Logseq plugin that integrates with OpenAI-compatible LLMs",
   "main": "index.html",
   "scripts": {

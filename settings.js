@@ -1,18 +1,19 @@
 // Default settings
 const DEFAULT_SETTINGS = {
-  provider: 'lingyiwanwu',
-  apiEndpoint: 'https://api.lingyiwanwu.com/v1',
-  apiKey: '',
-  model: 'yi-lightning',
-  temperature: 0.7,
-  maxTokens: 1000
+  API_Endpoint: 'https://api.lingyiwanwu.com/v1',
+  API_Key: '',
+  Verify_Key: false,
+  Model: 'yi-lightning',
+  Temperature: 0.7,
+  Max_Tokens: 1000,
+  isVerified: false
 }
 
 // API provider configuration
 const API_PROVIDERS = {
   'lingyiwanwu': {
     name: 'Lingyiwanwu',
-    endpoint: 'https://api.lingyiwanwu.com/v1',
+    API_Endpoint: 'https://api.lingyiwanwu.com/v1',
     defaultModel: 'yi-lightning',
     models: [] // Will be populated dynamically
   }
@@ -21,94 +22,104 @@ const API_PROVIDERS = {
 // Settings management
 let settings = {...DEFAULT_SETTINGS}
 
-async function fetchAvailableModels() {
+async function verifyApiKey() {
+  if (!settings.API_Key) {
+    logseq.App.showMsg('Please enter API key first', 'warning')
+    return
+  }
+
   try {
-    const response = await axios.get(`${DEFAULT_SETTINGS.apiEndpoint}/models`, {
+    const response = await axios.get(`${settings.API_Endpoint}/models`, {
       headers: {
-        'Authorization': `Bearer ${settings.apiKey}`,
+        'Authorization': `Bearer ${settings.API_Key}`,
         'Content-Type': 'application/json'
       }
     })
     
     if (response.data && response.data.data) {
       API_PROVIDERS.lingyiwanwu.models = response.data.data.map(model => model.id)
-      return true
+      settings.isVerified = true
+      await logseq.updateSettings({ isVerified: true })
+      logseq.App.showMsg('API key verified successfully!', 'success')
+      registerSettings()
     }
   } catch (error) {
-    console.error('Failed to fetch models:', error)
-    logseq.App.showMsg('Failed to fetch available models. Using default model.', 'warning')
+    console.error('Failed to verify:', error)
+    settings.isVerified = false
+    await logseq.updateSettings({ isVerified: false })
+    logseq.App.showMsg('Failed to verify API key: ' + (error.response?.data?.error?.message || error.message), 'error')
   }
-  return false
 }
 
 async function initializeSettings() {
   const savedSettings = await logseq.settings
   settings = {...DEFAULT_SETTINGS, ...savedSettings}
-  
-  // If API key is set, try to fetch models
-  if (settings.apiKey) {
-    await fetchAvailableModels()
-  } else {
-    logseq.App.showMsg('Please set your Lingyiwanwu API key in plugin settings', 'warning')
-  }
 }
 
-// Register plugin settings
 function registerSettings() {
-  // Get current models or fallback to default
   const availableModels = API_PROVIDERS.lingyiwanwu.models.length > 0 
     ? API_PROVIDERS.lingyiwanwu.models 
-    : [DEFAULT_SETTINGS.model]
+    : [DEFAULT_SETTINGS.Model]
 
   logseq.useSettingsSchema([
     {
-      key: "apiEndpoint",
+      key: "API_Endpoint",
       type: "string",
-      default: DEFAULT_SETTINGS.apiEndpoint,
-      title: "API Endpoint",
+      default: DEFAULT_SETTINGS.API_Endpoint,
       description: "The endpoint for Lingyiwanwu API"
     },
     {
-      key: "apiKey",
+      key: "API_Key",
       type: "string",
-      default: DEFAULT_SETTINGS.apiKey,
-      title: "API Key",
+      default: DEFAULT_SETTINGS.API_Key,
       description: "Your Lingyiwanwu API key"
     },
     {
-      key: "model",
+      key: "Verify_Key",
+      type: "boolean",
+      default: false,
+      description: "Click to verify your API key"
+    },
+    {
+      key: "Model",
       type: "enum",
       enumChoices: availableModels,
       enumPicker: "select",
-      default: DEFAULT_SETTINGS.model,
-      title: "Model",
-      description: "Lingyiwanwu model to use"
+      default: DEFAULT_SETTINGS.Model,
+      description: `Lingyiwanwu model to use ${settings.isVerified ? '✓' : '(Not verified)'}`
     },
     {
-      key: "temperature",
+      key: "Temperature",
       type: "number",
-      default: DEFAULT_SETTINGS.temperature,
-      title: "Temperature",
+      default: DEFAULT_SETTINGS.Temperature,
       description: "Controls randomness (0-1)"
     },
     {
-      key: "maxTokens",
+      key: "Max_Tokens",
       type: "number",
-      default: DEFAULT_SETTINGS.maxTokens,
-      title: "Max Tokens",
+      default: DEFAULT_SETTINGS.Max_Tokens,
       description: "Maximum tokens in response"
     }
   ])
 }
 
-// Listen for settings changes to update models when API key is changed
-logseq.onSettingsChanged(async (newSettings, oldSettings) => {
-  if (newSettings.apiKey && newSettings.apiKey !== oldSettings.apiKey) {
-    settings.apiKey = newSettings.apiKey
-    if (await fetchAvailableModels()) {
-      // Re-register settings to update the model choices
-      registerSettings()
-    }
+// Listen for settings changes
+logseq.onSettingsChanged((newSettings, oldSettings) => {
+  settings = {...settings, ...newSettings}
+  
+  // Handle verify button click
+  if (newSettings.Verify_Key !== oldSettings.Verify_Key && newSettings.Verify_Key) {
+    verifyApiKey().then(() => {
+      // Reset the verify button
+      logseq.updateSettings({ Verify_Key: false })
+    })
+  }
+  
+  // Reset verification when API key changes
+  if (newSettings.API_Key !== oldSettings.API_Key) {
+    settings.isVerified = false
+    logseq.updateSettings({ isVerified: false })
+    registerSettings()
   }
 })
 
