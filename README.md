@@ -4,7 +4,7 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
 
 ## Features
 
-- 🔌 Works with OpenAI-compatible APIs (LM Studio, Ollama, x.ai Grok, and more)
+- 🔌 Works with OpenAI-compatible APIs (LM Studio, Ollama, Google Gemini, x.ai Grok, and more)
 - 🎯 Custom system prompts for specialized tasks
 - ⚡️ Quick access with keyboard shortcuts
 - 🎛️ Adjustable temperature and response length
@@ -23,14 +23,16 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
 - **API Endpoint**: Your OpenAI-compatible API endpoint
   - For LM Studio (local): http://localhost:1234/v1
   - For Ollama (local): http://localhost:11434/v1
+  - For Google Gemini: https://generativelanguage.googleapis.com/v1beta/openai
   - For x.ai Grok: https://api.x.ai/v1
   - For other providers: Check their API documentation
 - **API Key**: Your API key
-  - Required for cloud providers (x.ai, etc.)
+  - Required for cloud providers (Google AI Studio, x.ai, etc.)
   - Can be empty for local providers (LM Studio, Ollama)
-- **Model**: Your model name (must match exactly)
+- **Model**: Your model name (case-sensitive, must match exactly)
   - LM Studio example: 'mistral-7b-instruct'
   - Ollama example: 'mistral', 'llama2'
+  - Google Gemini: 'gemini-1.5-flash' (all lowercase)
   - Grok: 'grok-1'
 - **Temperature**: Control response randomness (0-1)
 - **Max Tokens**: Set maximum response length
