@@ -32,7 +32,10 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
 - **Model**: Your model name (case-sensitive, must match exactly)
   - LM Studio example: 'mistral-7b-instruct'
   - Ollama example: 'mistral', 'llama2'
-  - Google Gemini: 'gemini-1.5-flash' (all lowercase)
+  - Google Gemini examples (all lowercase):
+    * 'gemini-1.5-flash'
+    * 'gemini-1.5-flash-latest'
+    * 'gemini-exp-1206'
   - Grok: 'grok-1'
 - **Temperature**: Control response randomness (0-1)
 - **Max Tokens**: Set maximum response length
