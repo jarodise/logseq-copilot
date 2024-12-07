@@ -36,7 +36,7 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
     * 'gemini-1.5-flash'
     * 'gemini-1.5-flash-latest'
     * 'gemini-exp-1206'
-  - Grok: 'grok-1'
+  - x.ai Grok: 'grok-beta'
 - **Temperature**: Control response randomness (0-1)
 - **Max Tokens**: Set maximum response length
 
