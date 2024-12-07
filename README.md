@@ -4,7 +4,7 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
 
 ## Features
 
-- 🔌 Works with OpenAI-compatible APIs (including local LM Studio)
+- 🔌 Works with OpenAI-compatible APIs (LM Studio, x.ai Grok, and more)
 - 🎯 Custom system prompts for specialized tasks
 - ⚡️ Quick access with keyboard shortcuts
 - 🎛️ Adjustable temperature and response length
@@ -22,9 +22,14 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
 ### API Settings
 - **API Endpoint**: Your OpenAI-compatible API endpoint
   - For LM Studio (local): http://localhost:1234/v1
+  - For x.ai Grok: https://api.x.ai/v1
   - For other providers: Check their API documentation
-- **API Key**: Your API key (can be empty for local LM Studio)
-- **Model**: Your model name (must match exactly, e.g., 'mistral-7b-instruct' for LM Studio)
+- **API Key**: Your API key
+  - Required for cloud providers (x.ai, etc.)
+  - Can be empty for local LM Studio
+- **Model**: Your model name (must match exactly)
+  - LM Studio example: 'mistral-7b-instruct'
+  - Grok: 'grok-1'
 - **Temperature**: Control response randomness (0-1)
 - **Max Tokens**: Set maximum response length
 
