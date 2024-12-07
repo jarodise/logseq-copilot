@@ -9,7 +9,11 @@ const DEFAULT_SETTINGS = {
   isVerified: false,
   Custom_Prompt_1: '',
   Custom_Prompt_2: '',
-  Custom_Prompt_3: ''
+  Custom_Prompt_3: '',
+  hotkey_default: 'ctrl+shift+h',
+  hotkey_1: 'ctrl+shift+j',
+  hotkey_2: 'ctrl+shift+k',
+  hotkey_3: 'ctrl+shift+l'
 }
 
 // API provider configuration
@@ -108,21 +112,27 @@ function registerSettings() {
       type: "string",
       default: "",
       title: "Custom Prompt No.1",
-      description: "Your first custom system prompt (trigger with /copilot1)"
+      description: "Your first custom system prompt (trigger with /copilot1 or Ctrl+Shift+J)"
     },
     {
       key: "Custom_Prompt_2",
       type: "string",
       default: "",
       title: "Custom Prompt No.2",
-      description: "Your second custom system prompt (trigger with /copilot2)"
+      description: "Your second custom system prompt (trigger with /copilot2 or Ctrl+Shift+K)"
     },
     {
       key: "Custom_Prompt_3",
       type: "string",
       default: "",
       title: "Custom Prompt No.3",
-      description: "Your third custom system prompt (trigger with /copilot3)"
+      description: "Your third custom system prompt (trigger with /copilot3 or Ctrl+Shift+L)"
+    },
+    {
+      key: "hotkeys_section",
+      type: "heading",
+      title: "⌨️ Default Hotkeys",
+      description: "Default Copilot:    Ctrl+Shift+H\n\nCustom Prompt 1:   Ctrl+Shift+J\n\nCustom Prompt 2:   Ctrl+Shift+K\n\nCustom Prompt 3:   Ctrl+Shift+L\n\nThese shortcuts can be customized in Settings > Shortcuts"
     }
   ])
 }
