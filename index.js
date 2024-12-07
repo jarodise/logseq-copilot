@@ -3,12 +3,14 @@
  */
 import { settings, initializeSettings, registerSettings } from './settings.js'
 
-async function formatRequest(prompt) {
+async function formatRequest(prompt, systemPrompt = null) {
   switch (settings.provider) {
     case 'anthropic':
       return {
         model: settings.model,
-        prompt: `\n\nHuman: ${prompt}\n\nAssistant:`,
+        prompt: systemPrompt 
+          ? `\n\nHuman: Instructions: ${systemPrompt}\nTask: ${prompt}\n\nAssistant:`
+          : `\n\nHuman: ${prompt}\n\nAssistant:`,
         max_tokens_to_sample: settings.maxTokens,
         temperature: settings.temperature
       }
@@ -17,7 +19,9 @@ async function formatRequest(prompt) {
         model: settings.model,
         contents: [{
           parts: [{
-            text: prompt
+            text: systemPrompt 
+              ? `Instructions: ${systemPrompt}\nTask: ${prompt}`
+              : prompt
           }]
         }],
         generationConfig: {
@@ -26,9 +30,14 @@ async function formatRequest(prompt) {
         }
       }
     default: // OpenAI-compatible format (OpenAI, Lingyiwanwu, Custom)
+      const messages = []
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt })
+      }
+      messages.push({ role: 'user', content: prompt })
       return {
         model: settings.model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: messages,
         temperature: settings.temperature,
         max_tokens: settings.maxTokens
       }
@@ -79,7 +88,7 @@ async function extractResponse(response) {
   }
 }
 
-async function callLLMAPI(prompt) {
+async function callLLMAPI(prompt, systemPrompt = null) {
   if (!settings.isVerified) {
     logseq.App.showMsg('Please verify your API key first', 'warning')
     return null
@@ -92,7 +101,7 @@ async function callLLMAPI(prompt) {
     // Prepare request
     const endpoint = await formatEndpoint()
     const headers = await formatHeaders()
-    const data = await formatRequest(prompt)
+    const data = await formatRequest(prompt, systemPrompt)
     
     // Make API call
     const response = await axios.post(endpoint, data, { headers })
@@ -120,7 +129,7 @@ async function main() {
   await initializeSettings()
   registerSettings()
   
-  // Register the copilot slash command
+  // Register the default copilot slash command
   logseq.Editor.registerSlashCommand(
     'copilot',
     async () => {
@@ -136,6 +145,32 @@ async function main() {
       }
     }
   )
+
+  // Register custom prompt commands
+  for (let i = 1; i <= 3; i++) {
+    const promptKey = `Custom_Prompt_${i}`
+    logseq.Editor.registerSlashCommand(
+      `copilot${i}`,
+      async () => {
+        const block = await logseq.Editor.getCurrentBlock()
+        if (!block) {
+          logseq.App.showMsg('Please select a block first', 'warning')
+          return
+        }
+
+        const customPrompt = settings[promptKey]
+        if (!customPrompt) {
+          logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`, 'warning')
+          return
+        }
+
+        const response = await callLLMAPI(block.content, customPrompt)
+        if (response) {
+          await logseq.Editor.insertBlock(block.uuid, response)
+        }
+      }
+    )
+  }
 }
 
 // bootstrap

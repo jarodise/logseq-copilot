@@ -6,7 +6,10 @@ const DEFAULT_SETTINGS = {
   Model: 'yi-lightning',
   Temperature: 0.7,
   Max_Tokens: 1000,
-  isVerified: false
+  isVerified: false,
+  Custom_Prompt_1: '',
+  Custom_Prompt_2: '',
+  Custom_Prompt_3: ''
 }
 
 // API provider configuration
@@ -99,6 +102,27 @@ function registerSettings() {
       type: "number",
       default: DEFAULT_SETTINGS.Max_Tokens,
       description: "Maximum tokens in response"
+    },
+    {
+      key: "Custom_Prompt_1",
+      type: "string",
+      default: "",
+      title: "Custom Prompt No.1",
+      description: "Your first custom system prompt (trigger with /copilot1)"
+    },
+    {
+      key: "Custom_Prompt_2",
+      type: "string",
+      default: "",
+      title: "Custom Prompt No.2",
+      description: "Your second custom system prompt (trigger with /copilot2)"
+    },
+    {
+      key: "Custom_Prompt_3",
+      type: "string",
+      default: "",
+      title: "Custom Prompt No.3",
+      description: "Your third custom system prompt (trigger with /copilot3)"
     }
   ])
 }
