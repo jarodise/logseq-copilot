@@ -1,0 +1,34 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'  # or your preferred version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the plugin
+        run: npm run build  # Adjust this if your build command is different
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          files: |
+            path/to/your/zipfile.zip  # Adjust this to the path of your zip file
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
