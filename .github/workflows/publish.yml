@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 name: Build plugin
 
 on:
@@ -124,4 +123,4 @@ jobs:
           asset_path: ./package.json
           asset_name: package.json
           asset_content_type: application/json
->>>>>>> dbbc1b897d31db2be2b0a635fec6cfc32249974d
+
