@@ -7,7 +7,7 @@ async function formatRequest(prompt, systemPrompt = null) {
   switch (settings.provider) {
     case 'anthropic':
       return {
-        model: settings.model,
+        model: settings.Model,
         prompt: systemPrompt 
           ? `\n\nHuman: Instructions: ${systemPrompt}\nTask: ${prompt}\n\nAssistant:`
           : `\n\nHuman: ${prompt}\n\nAssistant:`,
@@ -16,7 +16,7 @@ async function formatRequest(prompt, systemPrompt = null) {
       }
     case 'gemini':
       return {
-        model: settings.model,
+        model: settings.Model,
         contents: [{
           parts: [{
             text: systemPrompt 
@@ -36,7 +36,7 @@ async function formatRequest(prompt, systemPrompt = null) {
       }
       messages.push({ role: 'user', content: prompt })
       return {
-        model: settings.model,
+        model: settings.Model,
         messages: messages,
         temperature: settings.temperature,
         max_tokens: settings.maxTokens
@@ -47,7 +47,7 @@ async function formatRequest(prompt, systemPrompt = null) {
 async function formatEndpoint() {
   switch (settings.provider) {
     case 'gemini':
-      return `${settings.API_Endpoint}/models/${settings.model}:generateContent`
+      return `${settings.API_Endpoint}/models/${settings.Model}:generateContent`
     case 'anthropic':
       return `${settings.API_Endpoint}/complete`
     default: // OpenAI-compatible format
