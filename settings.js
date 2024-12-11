@@ -169,3 +169,4 @@ logseq.onSettingsChanged((newSettings, oldSettings) => {
 })
 
 export { settings, initializeSettings, registerSettings, API_PROVIDERS }
+
