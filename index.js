@@ -127,6 +127,7 @@ async function main() {
   
   // Initialize settings
   await initializeSettings()
+  console.log(settings)
   registerSettings()
   
   // Helper function to handle copilot commands
