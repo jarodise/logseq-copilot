@@ -97,6 +97,7 @@ async function callLLMAPI(prompt, systemPrompt = null) {
   try {
     // Show loading indicator
     logseq.App.showMsg('Thinking...', 'info')
+<<<<<<< HEAD
 
     // resolve provider
     if (!settings.provider) {
@@ -114,6 +115,9 @@ async function callLLMAPI(prompt, systemPrompt = null) {
       }
     }
 
+=======
+    
+>>>>>>> parent of 8e78607 (fix: resolve model provider)
     // Prepare request
     const endpoint = await formatEndpoint()
     const headers = await formatHeaders()
