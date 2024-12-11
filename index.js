@@ -97,7 +97,20 @@ async function callLLMAPI(prompt, systemPrompt = null) {
   try {
     // Show loading indicator
     logseq.App.showMsg('Thinking...', 'info')
-    
+
+    // resolve provider
+    if (!settings.provider) {
+      if (
+        settings.API_Endpoint?.includes('googleapis') ||
+        settings.Model?.contains('gemini')) {
+        settings.provider = 'gemini'
+      } else if (settings.API_Endpoint?.includes('anthropic')) {
+        settings.provider = 'anthropic'
+      } else {
+        settings.provider = 'OpenAI-compatible'
+      }
+    }
+
     // Prepare request
     const endpoint = await formatEndpoint()
     const headers = await formatHeaders()
