@@ -3,31 +3,33 @@
  */
 import { settings, initializeSettings, registerSettings } from './settings.js'
 
-async function formatRequest(prompt, systemPrompt = null) {
+async function formatRequest (prompt, systemPrompt = null) {
   switch (settings.provider) {
     case 'anthropic':
       return {
         model: settings.Model,
-        prompt: systemPrompt 
+        prompt: systemPrompt
           ? `\n\nHuman: Instructions: ${systemPrompt}\nTask: ${prompt}\n\nAssistant:`
           : `\n\nHuman: ${prompt}\n\nAssistant:`,
         max_tokens_to_sample: settings.maxTokens,
-        temperature: settings.temperature
+        temperature: settings.temperature,
       }
     case 'gemini':
       return {
         model: settings.Model,
-        contents: [{
-          parts: [{
-            text: systemPrompt 
-              ? `Instructions: ${systemPrompt}\nTask: ${prompt}`
-              : prompt
-          }]
-        }],
+        contents: [
+          {
+            parts: [
+              {
+                text: systemPrompt
+                  ? `Instructions: ${systemPrompt}\nTask: ${prompt}`
+                  : prompt,
+              }],
+          }],
         generationConfig: {
           temperature: settings.temperature,
           maxOutputTokens: settings.maxTokens,
-        }
+        },
       }
     default: // OpenAI-compatible format (OpenAI, Lingyiwanwu, Custom)
       const messages = []
@@ -39,12 +41,12 @@ async function formatRequest(prompt, systemPrompt = null) {
         model: settings.Model,
         messages: messages,
         temperature: settings.temperature,
-        max_tokens: settings.maxTokens
+        max_tokens: settings.maxTokens,
       }
   }
 }
 
-async function formatEndpoint() {
+async function formatEndpoint () {
   switch (settings.provider) {
     case 'gemini':
       return `${settings.API_Endpoint}/models/${settings.Model}:generateContent`
@@ -55,7 +57,7 @@ async function formatEndpoint() {
   }
 }
 
-async function formatHeaders() {
+async function formatHeaders () {
   switch (settings.provider) {
     case 'anthropic':
       return {
@@ -70,14 +72,14 @@ async function formatHeaders() {
     default: // OpenAI-compatible format
       return {
         'Authorization': `Bearer ${settings.API_Key}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       }
   }
 }
 
-async function extractResponse(response) {
+async function extractResponse (response) {
   if (!response.data) return null
-  
+
   switch (settings.provider) {
     case 'anthropic':
       return response.data.completion?.trim()
@@ -88,7 +90,7 @@ async function extractResponse(response) {
   }
 }
 
-async function callLLMAPI(prompt, systemPrompt = null) {
+async function callLLMAPI (prompt, systemPrompt = null) {
   if (!settings.isVerified) {
     logseq.App.showMsg('Please verify your API key first', 'warning')
     return null
@@ -97,7 +99,6 @@ async function callLLMAPI(prompt, systemPrompt = null) {
   try {
     // Show loading indicator
     logseq.App.showMsg('Thinking...', 'info')
-<<<<<<< HEAD
 
     // resolve provider
     if (!settings.provider) {
@@ -115,17 +116,14 @@ async function callLLMAPI(prompt, systemPrompt = null) {
       }
     }
 
-=======
-    
->>>>>>> parent of 8e78607 (fix: resolve model provider)
     // Prepare request
     const endpoint = await formatEndpoint()
     const headers = await formatHeaders()
     const data = await formatRequest(prompt, systemPrompt)
-    
+
     // Make API call
     const response = await axios.post(endpoint, data, { headers })
-    
+
     // Extract and return response
     const result = await extractResponse(response)
     if (!result) {
@@ -134,23 +132,23 @@ async function callLLMAPI(prompt, systemPrompt = null) {
     return result
   } catch (error) {
     console.error('API call failed:', error)
-    const errorMessage = error.response?.data?.error?.message || 
-                        error.response?.data?.message ||
-                        error.message
+    const errorMessage = error.response?.data?.error?.message ||
+      error.response?.data?.message ||
+      error.message
     logseq.App.showMsg('API call failed: ' + errorMessage, 'error')
     return null
   }
 }
 
-async function main() {
+async function main () {
   console.log('Logseq Copilot plugin loaded')
-  
+
   // Initialize settings
   await initializeSettings()
   registerSettings()
-  
+
   // Helper function to handle copilot commands
-  async function handleCopilotCommand(systemPrompt = null) {
+  async function handleCopilotCommand (systemPrompt = null) {
     const block = await logseq.Editor.getCurrentBlock()
     if (!block) {
       logseq.App.showMsg('Please select a block first', 'warning')
@@ -166,42 +164,43 @@ async function main() {
   // Register the default copilot command
   logseq.Editor.registerSlashCommand(
     'copilot',
-    async () => handleCopilotCommand()
+    async () => handleCopilotCommand(),
   )
 
   // Register main copilot command
   logseq.App.registerCommand(
-    "default-copilot",
+    'default-copilot',
     {
-      key: "default-copilot",
-      label: "Run Copilot",
-      desc: "Run default Copilot command",
+      key: 'default-copilot',
+      label: 'Run Copilot',
+      desc: 'Run default Copilot command',
       keybinding: {
-        mode: "global",
-        binding: "ctrl+shift+h"
-      }
+        mode: 'global',
+        binding: 'ctrl+shift+h',
+      },
     },
-    async () => handleCopilotCommand()
+    async () => handleCopilotCommand(),
   )
 
   // Register custom prompt commands
   const hotkeyMap = ['j', 'k', 'l']
   for (let i = 1; i <= 3; i++) {
     const promptKey = `Custom_Prompt_${i}`
-    
+
     // Register slash command
     logseq.Editor.registerSlashCommand(
       `copilot${i}`,
       async () => {
         const customPrompt = settings[promptKey]
         if (!customPrompt) {
-          logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`, 'warning')
+          logseq.App.showMsg(
+            `Please set Custom Prompt No.${i} in settings first`, 'warning')
           return
         }
         await handleCopilotCommand(customPrompt)
-      }
+      },
     )
-    
+
     // Register command with customizable hotkey
     logseq.App.registerCommand(
       `copilot-custom-${i}`,
@@ -210,18 +209,19 @@ async function main() {
         label: `Run Copilot with Custom Prompt ${i}`,
         desc: `Run Copilot with Custom Prompt ${i}`,
         keybinding: {
-          mode: "global",
-          binding: `ctrl+shift+${hotkeyMap[i-1]}`
-        }
+          mode: 'global',
+          binding: `ctrl+shift+${hotkeyMap[i - 1]}`,
+        },
       },
       async () => {
         const customPrompt = settings[promptKey]
         if (!customPrompt) {
-          logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`, 'warning')
+          logseq.App.showMsg(
+            `Please set Custom Prompt No.${i} in settings first`, 'warning')
           return
         }
         await handleCopilotCommand(customPrompt)
-      }
+      },
     )
   }
 
@@ -232,7 +232,7 @@ async function main() {
       <div class="button">
         <div data-on-click="runCopilot" class="icon">🤖</div>
       </div>
-    `
+    `,
   })
 }
 
