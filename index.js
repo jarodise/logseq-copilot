@@ -102,9 +102,12 @@ async function callLLMAPI(prompt, systemPrompt = null) {
     if (!settings.provider) {
       if (
         settings.API_Endpoint?.includes('googleapis') ||
-        settings.Model?.contains('gemini')) {
+        settings.Model?.includes('gemini')
+      ) {
         settings.provider = 'gemini'
-      } else if (settings.API_Endpoint?.includes('anthropic')) {
+      } else if (
+        settings.API_Endpoint?.includes('anthropic')
+      ) {
         settings.provider = 'anthropic'
       } else {
         settings.provider = 'OpenAI-compatible'
