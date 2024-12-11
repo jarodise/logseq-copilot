@@ -99,7 +99,7 @@ async function callLLMAPI (prompt, systemPrompt = null) {
     // resolve provider
     if (!settings.provider) {
       if (settings.API_Endpoint?.includes('googleapis') ||
-        settings.Model?.contains('gemini')) {
+        settings.Model?.includes('gemini')) {
         settings.provider = 'gemini'
       } else if (settings.API_Endpoint?.includes('anthropic')) {
         settings.provider = 'anthropic'
