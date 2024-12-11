@@ -16,8 +16,7 @@ async function formatRequest (prompt, systemPrompt = null) {
       }
     case 'gemini':
       return {
-        model: settings.Model,
-        contents: [
+        model: settings.Model, contents: [
           {
             parts: [
               {
@@ -25,8 +24,7 @@ async function formatRequest (prompt, systemPrompt = null) {
                   ? `Instructions: ${systemPrompt}\nTask: ${prompt}`
                   : prompt,
               }],
-          }],
-        generationConfig: {
+          }], generationConfig: {
           temperature: settings.temperature,
           maxOutputTokens: settings.maxTokens,
         },
@@ -61,13 +59,11 @@ async function formatHeaders () {
   switch (settings.provider) {
     case 'anthropic':
       return {
-        'x-api-key': settings.API_Key,
-        'content-type': 'application/json',
+        'x-api-key': settings.API_Key, 'content-type': 'application/json',
       }
     case 'gemini':
       return {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': settings.API_Key,
+        'Content-Type': 'application/json', 'x-goog-api-key': settings.API_Key,
       }
     default: // OpenAI-compatible format
       return {
@@ -102,8 +98,7 @@ async function callLLMAPI (prompt, systemPrompt = null) {
 
     // resolve provider
     if (!settings.provider) {
-      if (
-        settings.API_Endpoint?.includes('googleapis') ||
+      if (settings.API_Endpoint?.includes('googleapis') ||
         settings.Model?.contains('gemini')) {
         settings.provider = 'gemini'
       } else if (settings.API_Endpoint?.includes('anthropic')) {
@@ -130,8 +125,7 @@ async function callLLMAPI (prompt, systemPrompt = null) {
   } catch (error) {
     console.error('API call failed:', error)
     const errorMessage = error.response?.data?.error?.message ||
-      error.response?.data?.message ||
-      error.message
+      error.response?.data?.message || error.message
     logseq.App.showMsg('API call failed: ' + errorMessage, 'error')
     return null
   }
@@ -159,25 +153,18 @@ async function main () {
   }
 
   // Register the default copilot command
-  logseq.Editor.registerSlashCommand(
-    'copilot',
-    async () => handleCopilotCommand(),
-  )
+  logseq.Editor.registerSlashCommand('copilot',
+    async () => handleCopilotCommand())
 
   // Register main copilot command
-  logseq.App.registerCommand(
-    'default-copilot',
-    {
-      key: 'default-copilot',
-      label: 'Run Copilot',
-      desc: 'Run default Copilot command',
-      keybinding: {
-        mode: 'global',
-        binding: 'ctrl+shift+h',
-      },
+  logseq.App.registerCommand('default-copilot', {
+    key: 'default-copilot',
+    label: 'Run Copilot',
+    desc: 'Run default Copilot command',
+    keybinding: {
+      mode: 'global', binding: 'ctrl+shift+h',
     },
-    async () => handleCopilotCommand(),
-  )
+  }, async () => handleCopilotCommand())
 
   // Register custom prompt commands
   const hotkeyMap = ['j', 'k', 'l']
@@ -185,47 +172,38 @@ async function main () {
     const promptKey = `Custom_Prompt_${i}`
 
     // Register slash command
-    logseq.Editor.registerSlashCommand(
-      `copilot${i}`,
-      async () => {
-        const customPrompt = settings[promptKey]
-        if (!customPrompt) {
-          logseq.App.showMsg(
-            `Please set Custom Prompt No.${i} in settings first`, 'warning')
-          return
-        }
-        await handleCopilotCommand(customPrompt)
-      },
-    )
+    logseq.Editor.registerSlashCommand(`copilot${i}`, async () => {
+      const customPrompt = settings[promptKey]
+      if (!customPrompt) {
+        logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`,
+          'warning')
+        return
+      }
+      await handleCopilotCommand(customPrompt)
+    })
 
     // Register command with customizable hotkey
-    logseq.App.registerCommand(
-      `copilot-custom-${i}`,
-      {
-        key: `copilot-custom-${i}`,
-        label: `Run Copilot with Custom Prompt ${i}`,
-        desc: `Run Copilot with Custom Prompt ${i}`,
-        keybinding: {
-          mode: 'global',
-          binding: `ctrl+shift+${hotkeyMap[i - 1]}`,
-        },
+    logseq.App.registerCommand(`copilot-custom-${i}`, {
+      key: `copilot-custom-${i}`,
+      label: `Run Copilot with Custom Prompt ${i}`,
+      desc: `Run Copilot with Custom Prompt ${i}`,
+      keybinding: {
+        mode: 'global', binding: `ctrl+shift+${hotkeyMap[i - 1]}`,
       },
-      async () => {
-        const customPrompt = settings[promptKey]
-        if (!customPrompt) {
-          logseq.App.showMsg(
-            `Please set Custom Prompt No.${i} in settings first`, 'warning')
-          return
-        }
-        await handleCopilotCommand(customPrompt)
-      },
-    )
+    }, async () => {
+      const customPrompt = settings[promptKey]
+      if (!customPrompt) {
+        logseq.App.showMsg(`Please set Custom Prompt No.${i} in settings first`,
+          'warning')
+        return
+      }
+      await handleCopilotCommand(customPrompt)
+    })
   }
 
   // Add toolbar button
   logseq.App.registerUIItem('toolbar', {
-    key: 'copilot-commands',
-    template: `
+    key: 'copilot-commands', template: `
       <div class="button">
         <div data-on-click="runCopilot" class="icon">🤖</div>
       </div>
