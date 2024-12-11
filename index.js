@@ -47,11 +47,11 @@ async function formatRequest(prompt, systemPrompt = null) {
 async function formatEndpoint() {
   switch (settings.provider) {
     case 'gemini':
-      return `${settings.apiEndpoint}/models/${settings.model}:generateContent`
+      return `${settings.API_Endpoint}/models/${settings.model}:generateContent`
     case 'anthropic':
-      return `${settings.apiEndpoint}/complete`
+      return `${settings.API_Endpoint}/complete`
     default: // OpenAI-compatible format
-      return `${settings.apiEndpoint}/chat/completions`
+      return `${settings.API_Endpoint}/chat/completions`
   }
 }
 
@@ -59,17 +59,17 @@ async function formatHeaders() {
   switch (settings.provider) {
     case 'anthropic':
       return {
-        'x-api-key': settings.apiKey,
+        'x-api-key': settings.API_Key,
         'content-type': 'application/json',
       }
     case 'gemini':
       return {
         'Content-Type': 'application/json',
-        'x-goog-api-key': settings.apiKey,
+        'x-goog-api-key': settings.API_Key,
       }
     default: // OpenAI-compatible format
       return {
-        'Authorization': `Bearer ${settings.apiKey}`,
+        'Authorization': `Bearer ${settings.API_Key}`,
         'Content-Type': 'application/json'
       }
   }
