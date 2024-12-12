@@ -131,6 +131,30 @@ async function callLLMAPI (prompt, systemPrompt = null) {
   }
 }
 
+function isPageLink(content) {
+    const pageLinkRegex = /^\[\[.+\]\]$/;
+    return pageLinkRegex.test(content);
+}
+
+async function fetchPageContent(pageName) {
+    const page = await logseq.Editor.getPage(pageName);
+    if (!page) {
+        return null;
+    }
+    const blocks = await logseq.Editor.getPageBlocksTree(page.uuid);
+    let pageContent = '';
+    for (const block of blocks) {
+        pageContent += block.content + '\n';
+        if (block.children) {
+            for (const child of block.children) {
+                pageContent += child.content + '\n';
+            }
+        }
+    }
+    return pageContent.trim();
+}
+
+
 async function main () {
   console.log('Logseq Copilot plugin loaded')
 
@@ -146,7 +170,19 @@ async function main () {
       return
     }
 
-    const response = await callLLMAPI(block.content, systemPrompt)
+    let prompt = block.content;
+    if (isPageLink(prompt)) {
+        const pageName = prompt.slice(2, -2);
+        const pageContent = await fetchPageContent(pageName);
+        if (pageContent) {
+            prompt = pageContent;
+        } else {
+            logseq.App.showMsg(`Could not fetch content for page: ${pageName}`, 'warning');
+            return;
+        }
+    }
+
+    const response = await callLLMAPI(prompt, systemPrompt)
     if (response) {
       await logseq.Editor.insertBlock(block.uuid, response)
     }

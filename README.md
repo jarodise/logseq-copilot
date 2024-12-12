@@ -9,6 +9,7 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
 - ⚡️ Quick access with keyboard shortcuts
 - 🎛️ Adjustable temperature and response length
 - ⌨️ Customizable hotkeys
+- 🔗 **Page Content Fetching:** If a block contains only a page link (e.g., `[[page name]]`), the plugin will fetch the content of the linked page and use it as the context for the LLM. This allows you to use the plugin with page content as if it were block content. By default our plugin only works with current block. This is useful when you want to apply prompts to multiple blocks at the same time, you can use the "Block to Page" plugin to turn multiple blocks into page and then apply logseq-copilot system prompts. 
 
 ## Installation
 
@@ -24,6 +25,7 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
   - For LM Studio (local): http://localhost:1234/v1
   - For Ollama (local): http://localhost:11434/v1
   - For Google Gemini: https://generativelanguage.googleapis.com/v1beta/openai
+  - For x.ai Grok: https://api.x.ai/v1
   - For x.ai Grok: https://api.x.ai/v1
   - For other providers: Check their API documentation
 - **API Key**: Your API key
