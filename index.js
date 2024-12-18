@@ -241,7 +241,7 @@ async function main () {
   logseq.App.registerUIItem('toolbar', {
     key: 'copilot-commands', template: `
       <div class="button">
-        <div data-on-click="runCopilot" class="icon">🤖</div>
+        <div data-on-click="runCopilot" class="icon"><img src="./icon.svg" alt="copilot toolbar icon" /></div>
       </div>
     `,
   })
