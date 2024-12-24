@@ -236,7 +236,18 @@ async function main () {
       await handleCopilotCommand(customPrompt)
     })
   }
+  // Add toolbar button
+  logseq.App.registerUIItem('toolbar', {
+    key: 'copilot-commands', template: `
+      <div class="button">
+        <div data-on-click="runCopilot" class="icon">☸︎</div>
+      </div>
+    `,
+  })
+}
 
+// bootstrap
+logseq.ready(main).catch(console.error)
 
 // bootstrap
 logseq.ready(main).catch(console.error)
