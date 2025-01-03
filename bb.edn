@@ -1,0 +1,23 @@
+{:paths [#_"scripts"]
+ :tasks
+ {:requires ([cheshire.core :as json])
+  :init (do (defn x [& cmds] (doseq [cmd cmds] (shell cmd)))
+            (def v (-> (slurp "package.json") (json/parse-string true) :version)))
+  test       (x "npx shadow-cljs release test")
+  prep       (x "rm -fr dist out", "mkdir dist", "cp -R resources/. dist/")
+  watch-cljs (x "yarn", "yarn cache clean", "npx shadow-cljs watch :plugin :test")
+  -dev       {:depends [watch-cljs]}
+  dev        {:doc "Main development task."
+              :depends [prep]
+              :task (run '-dev {:parallel true})}
+  deps       {:doc "Check dependency updates."
+              :task (x "npx npm-check-updates", "clojure -M:outdated")}
+  portal     {:doc "Open Portal UI. (https://github.com/djblue/portal)"
+              :task (x "script/bb-repl-with-portal.sh")}
+  build-cljs {:doc "Compile ClojureScript."
+              :task (x "yarn", "npx shadow-cljs release :plugin")}
+  build      {:depends [prep build-cljs]}
+  release    {:doc "Add Git version tag; push and trigger build and release GitHub workflow."
+              :task (do (println "Releasing version:" v "...")
+                        (x (format "git tag -a %s -m \"Release version: %s\"" v v)
+                           (format "git push origin %s" v)))}}}

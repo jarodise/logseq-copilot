@@ -1,8 +1,8 @@
 {
   "name": "logseq-copilot",
-  "version": "1.0.0",
+  "version": "0.8.0",
   "description": "A Logseq plugin that integrates with OpenAI-compatible LLMs",
-  "main": "index.html",
+  "main": "./dist/index.html",
   "scripts": {
     "build": "echo 'No build step required'"
   },
@@ -12,12 +12,17 @@
   ],
   "author": "jarodise",
   "license": "MIT",
+  "devDependencies": {
+    "shadow-cljs": "2.28.19"
+  },
   "dependencies": {
-    "axios": "^1.4.0"
+    "@logseq/libs": "0.0.17"
   },
   "logseq": {
     "id": "logseq-copilot",
-    "icon": "icon.svg",
-    "title": "Logseq Copilot"
+    "icon": "dist/icon.svg",
+    "title": "Logseq Copilot CLJS",
+    "main": "dist/index.html",
+    "favicon": "dist/icon.svg"
   }
 }

@@ -1,64 +1,45 @@
-name: Build plugin
-
-on:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
-
+name: Build Logseq Plugin Copilot
+run-name: ${{ github.actor }} is running GitHub Actions for Logseq Plugin Copilot
 env:
   PLUGIN_NAME: logseq-copilot
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+  discussions: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Prepare NodeJS
+        uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
-      - name: Install dependencies
-        run: npm install
-      - name: Build
-        id: build
+          node-version: '18'
+      - name: Prepare Clojure Tools
+        uses: DeLaGuardo/setup-clojure@12.3
+        with:
+          cli: latest
+          bb: latest
+      - name: Build Code
         run: |
+          npm install -g yarn
+          bb build
           mkdir ${{ env.PLUGIN_NAME }}
-          cp README.md package.json icon.svg index.html index.js settings.js ${{ env.PLUGIN_NAME }}
-          zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
+          cp package.json README.md demo.gif ${{ env.PLUGIN_NAME }}
+          mv dist ${{ env.PLUGIN_NAME }}
+          zip -r ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip ${{ env.PLUGIN_NAME }}
           ls
-          echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
-
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.ref }}
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          allowUpdates: true
-          draft: false
-          prerelease: false
-
-      - name: Upload zip file
-        id: upload_zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}.zip
-          asset_name: ${{ format('{0}-{1}.zip', env.PLUGIN_NAME, steps.build.outputs.tag_name) }}
-          asset_content_type: application/zip
-
-      - name: Upload package.json
-        id: upload_metadata
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./package.json
-          asset_name: package.json
-          asset_content_type: application/json
+          files: |
+            package.json
+            ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip

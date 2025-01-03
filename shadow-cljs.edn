@@ -1,0 +1,20 @@
+{:source-paths ["src"]
+ :deps true
+ :dev-http {8080 "dist"}
+ :nrepl {:port 8702
+         :middleware [portal.nrepl/wrap-portal]
+         :init-ns core}
+ :compiler-options {:infer-externs      :auto
+                    :output-feature-set :es-next
+                    :source-map         true
+                    :source-map-detail-level :all
+                    :warnings           {:fn-deprecated false}}
+ :builds {:plugin {:target :browser
+                 :module-loader true
+                 :output-dir "dist"
+                 :modules {:main {:init-fn logseq-copilot.core/init}}
+                 :devtools {:after-load logseq-copilot.core/reload!
+                            :repl-pprint true
+                            :watch-dir "dist"}
+                 :release {:compiler-options {:optimizations :advanced}}}}
+ :js-options {:js-provider :shadow}} 
