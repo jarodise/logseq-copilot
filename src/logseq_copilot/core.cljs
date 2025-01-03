@@ -5,6 +5,9 @@
             [promesa.core :as p]
             [logseq-copilot.settings :as settings]))
 
+;; declaring the call-llm-api function so the compiler can find the definition
+(declare call-llm-api)
+
 (defn handle-copilot [prompt]
   (-> (js/logseq.Editor.getSelectedBlocks)
       (.then (fn [blocks]
