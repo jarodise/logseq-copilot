@@ -1,8 +1,14 @@
 (ns logseq-copilot.settings
   (:require [clojure.string :as str]
-            [cljs-http.client :as http]
-            [clojure.core.async :refer [go <!]]
-            [promesa.core :as p]))
+            [promesa.core :as p]
+            [logseq-copilot.http :as http]))
+
+(declare register-settings)
+
+(defn show-message [text type]
+  (let [msg-opts #js {:key "logseq-copilot"
+                      :timeout 3000}]
+    (js/logseq.UI.showMsg text type msg-opts)))
 
 (def default-settings
   {:API_Endpoint ""
@@ -20,78 +26,88 @@
    :hotkey-3 "ctrl+shift+l"})
 
 (def settings (atom default-settings))
-
-(defn resolve-provider [endpoint model]
-  (cond
-    (or (re-find #"googleapis" endpoint)
-        (re-find #"gemini" model))
-    "gemini"
-    
-    (re-find #"anthropic" endpoint)
-    "anthropic"
-    
-    (re-find #"localhost:11434" endpoint)
-    "ollama"
-    
-    :else
-    "OpenAI-compatible"))
-
-(defn format-api-endpoint [endpoint]
-  (cond
-    (str/ends-with? endpoint "/v1")
-    endpoint
-    
-    (= endpoint "https://api.openai.com")
-    "https://api.openai.com/v1"
-    
-    ;; Remove barras extras e adiciona /v1
-    :else
-    (str (str/replace endpoint #"/+$" "") "/v1")))
+(def verification-in-progress (atom false))
 
 (defn verify-api-key []
-  (p/create
-    (fn [resolve reject]
-      (let [{:keys [API_Key API_Endpoint Model]} @settings
-            provider (resolve-provider API_Endpoint Model)
-            formatted-endpoint (format-api-endpoint API_Endpoint)]
-        (when (or (str/blank? API_Endpoint)
-                  (str/blank? Model)
-                  (and (not= provider "ollama") (str/blank? API_Key)))
-          (js/logseq.App.showMsg "Please enter API endpoint, key and model name first" "warning")
-          (reject "Missing API configuration"))
-        
-        (go
-          (let [response (<! (http/get
-                             (case provider
-                               "ollama" (str formatted-endpoint "/api/tags")
-                               "gemini" (str formatted-endpoint "/models/" Model)
-                               (str formatted-endpoint "/models"))
-                             {:headers (case provider
-                                       "anthropic" {"x-api-key" API_Key}
-                                       "gemini" {"x-goog-api-key" API_Key}
-                                       "ollama" {}
-                                       {"Authorization" (str "Bearer " API_Key)})
-                              :with-credentials? false}))
-                {:keys [success body error-text]} response]
-            (if success
-              (do
-                (swap! settings assoc :provider provider)
-                (swap! settings assoc :API_Endpoint formatted-endpoint)
-                (swap! settings assoc :is-verified true)
-                (js/logseq.updateSettings #js {:API_Endpoint formatted-endpoint
-                                             :isVerified true})
-                (js/logseq.App.showMsg "API connection verified successfully!" "success")
-                (resolve true))
-              (do
-                (swap! settings assoc :is-verified false)
-                (js/logseq.updateSettings #js {:isVerified false})
-                (js/logseq.App.showMsg (str "API verification failed: " error-text) "error")
-                (reject error-text)))))))))
+  (if @verification-in-progress
+    (p/rejected "Verification already in progress")
+    (do
+      (reset! verification-in-progress true)
+      (p/create
+       (fn [resolve reject]
+         (let [{:keys [API_Key API_Endpoint Model]} @settings
+               provider (http/resolve-provider API_Endpoint Model)
+               formatted-endpoint (http/format-api-endpoint API_Endpoint)]
+           (when (or (str/blank? API_Endpoint)
+                     (str/blank? Model)
+                     (and (not= provider "ollama") (str/blank? API_Key)))
+             (show-message "Please enter API endpoint, key and model name first" "warning")
+             (reset! verification-in-progress false)
+             (reject "Missing API configuration"))
+           
+           (-> (http/make-request
+                {:method :get
+                 :url (case provider
+                       "ollama" (str formatted-endpoint "/api/tags")
+                       "gemini" (str formatted-endpoint "/models/" Model)
+                       "anthropic" (str formatted-endpoint "/models")
+                       (str formatted-endpoint "/models"))
+                 :headers (http/format-headers API_Key provider)})
+               (p/then
+                (fn [_]
+                  (swap! settings assoc :provider provider)
+                  (swap! settings assoc :API_Endpoint formatted-endpoint)
+                  (swap! settings assoc :is-verified true)
+                  (js/logseq.updateSettings #js {:API_Endpoint formatted-endpoint
+                                               :isVerified true})
+                  (show-message "API connection verified successfully!" "success")
+                  (reset! verification-in-progress false)
+                  (resolve true)))
+               (p/catch
+                (fn [error]
+                  (swap! settings assoc :is-verified false)
+                  (js/logseq.updateSettings #js {:isVerified false})
+                  (show-message (str "API verification failed: " error) "error")
+                  (reset! verification-in-progress false)
+                  (reject error))))))))))
 
 (defn initialize-settings []
   (-> (js/logseq.App.getUserConfigs)
       (.then (fn [saved-settings]
               (reset! settings (merge default-settings (js->clj saved-settings :keywordize-keys true)))))))
+
+(def verify-timeout (atom nil))
+
+(defn handle-verify []
+  (-> (verify-api-key)
+      (.catch (fn [err]
+                (js/console.error "Verification failed:" err)
+                (reset! verification-in-progress false)))
+      (.finally (fn []
+                 (js/logseq.updateSettings #js {:Verify_Key false})))))
+
+(defn handle-settings-changed [new-settings old-settings]
+  (let [new-settings (js->clj new-settings :keywordize-keys true)
+        old-settings (js->clj old-settings :keywordize-keys true)]
+    (reset! settings (merge @settings new-settings))
+    
+    ;; Handle verify button click
+    (when (and (get new-settings :Verify_Key)
+               (not (get old-settings :Verify_Key)))
+      ;; Clear any existing timeout
+      (when @verify-timeout
+        (js/clearTimeout @verify-timeout))
+      
+      ;; Set new timeout
+      (reset! verify-timeout
+              (js/setTimeout handle-verify 500)))
+    
+    ;; Reset verification when API key changes
+    (when (not= (get new-settings :API_Key)
+                (get old-settings :API_Key))
+      (swap! settings assoc :is-verified false)
+      (js/logseq.updateSettings #js {:isVerified false})
+      (register-settings))))
 
 (defn register-settings []
   (js/logseq.useSettingsSchema
@@ -155,27 +171,6 @@
         :type "heading"
         :title "⌨️ Default Hotkeys"
         :description "Default Copilot:    Ctrl+Shift+H\n\nCustom Prompt 1:   Ctrl+Shift+J\n\nCustom Prompt 2:   Ctrl+Shift+K\n\nCustom Prompt 3:   Ctrl+Shift+L\n\nThese shortcuts can be customized in Settings > Shortcuts"}])))
-
-;; Settings change listener
-(defn handle-settings-changed [new-settings old-settings]
-  (let [new-settings (js->clj new-settings :keywordize-keys true)
-        old-settings (js->clj old-settings :keywordize-keys true)]
-    (reset! settings (merge @settings new-settings))
-    
-    ;; Handle verify button click
-    (when (and (get new-settings :Verify_Key)
-               (not (get old-settings :Verify_Key)))
-      (-> (verify-api-key)
-          (.catch (fn [err]
-                   (js/console.error "Verification failed:" err)))
-          (.finally #(js/logseq.updateSettings #js {:Verify_Key false}))))
-    
-    ;; Reset verification when API key changes
-    (when (not= (get new-settings :API_Key)
-                (get old-settings :API_Key))
-      (swap! settings assoc :is-verified false)
-      (js/logseq.updateSettings #js {:isVerified false})
-      (register-settings))))
 
 ;; Register settings change listener
 (js/logseq.onSettingsChanged handle-settings-changed) 
