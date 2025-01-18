@@ -1,9 +1,10 @@
 (ns logseq-copilot.core
   (:require [promesa.core :as p]
-            [clojure.string :as str]
+            [goog.object :as gobj]
+            [run.avelino.logseq-libs :as ls]
+            [run.avelino.logseq-libs.ui :as ls-ui]
             [logseq-copilot.settings :as settings]
-            [logseq-copilot.http :as http]
-            [goog.object :as gobj]))
+            [logseq-copilot.http :as http]))
 
 (defn insert-block
   "Inserts a new block in Logseq with the given content.
@@ -102,7 +103,7 @@
   (if-not (:is-verified @settings/settings)
     (do
       (js/console.log "[call-llm-api] API not verified")
-      (js/logseq.App.showMsg "Please verify your API connection first" "warning")
+      (ls-ui/show-msg! "Please verify your API connection first" "warning")
       (p/resolved nil))
     (let [provider (:provider @settings/settings)
           endpoint (http/format-endpoint (:API_Endpoint @settings/settings) provider (:Model @settings/settings))
@@ -135,22 +136,22 @@
       (do
         (js/console.log "[handle-copilot] Block content:" content)
         (call-llm-api block content prompt))
-      (js/logseq.App.showMsg "Please position cursor in a block first" "warning"))))
+      (ls-ui/show-msg! "Please position cursor in a block first" "warning"))))
 
 (defn register-commands
   "Registers slash commands for the Logseq Copilot plugin.
    Adds /copilot and /copilot1-3 commands that use different prompts."
   []
-  (js/logseq.Editor.registerSlashCommand
+  (ls/register-slash-command!
    "copilot"
    #(handle-copilot nil))
-  (js/logseq.Editor.registerSlashCommand
+  (ls/register-slash-command!
    "copilot1"
    #(handle-copilot (:Custom_Prompt_1 @settings/settings)))
-  (js/logseq.Editor.registerSlashCommand
+  (ls/register-slash-command!
    "copilot2"
    #(handle-copilot (:Custom_Prompt_2 @settings/settings)))
-  (js/logseq.Editor.registerSlashCommand
+  (ls/register-slash-command!
    "copilot3"
    #(handle-copilot (:Custom_Prompt_3 @settings/settings))))
 
@@ -162,13 +163,12 @@
    - shortcut: Keyboard shortcut
    - prompt: Custom prompt to use when triggered"
   [key label shortcut prompt]
-  (js/logseq.App.registerCommandPalette
-   (clj->js
-    {:key (str "copilot-" key)
-     :label (str "Logseq Copilot: " label)
-     :keybinding {:mode "global"
-                  :binding shortcut}
-     :handler #(handle-copilot prompt)})))
+  (ls/register-command-palette!
+   {:key (str "copilot-" key)
+    :label (str "Logseq Copilot: " label)
+    :keybinding {:mode "global"
+                 :binding shortcut}
+    :handler #(handle-copilot prompt)}))
 
 (defn register-hotkeys
   "Registers all hotkey commands for the plugin.
@@ -197,14 +197,14 @@
   "Initializes the Logseq Copilot plugin.
    Sets up settings, registers commands and hotkeys."
   []
-  (.then (js/logseq.ready)
-         (fn []
-           (.then (settings/initialize-settings)
-                  (fn []
-                    (settings/register-settings)
-                    (register-commands)
-                    (register-hotkeys)
-                    (js/console.log "Logseq Copilot plugin initialized"))))))
+  (ls/ready!
+   (fn []
+     (.then (settings/initialize-settings)
+            (fn []
+              (settings/register-settings)
+              (register-commands)
+              (register-hotkeys)
+              (js/console.log "Logseq Copilot plugin initialized"))))))
 
 (defn reload!
   "Hot reload handler for development."

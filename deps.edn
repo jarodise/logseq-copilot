@@ -5,4 +5,8 @@
         funcool/promesa {:mvn/version "11.0.678"}
         binaryage/devtools    {:mvn/version "1.0.7"}
         djblue/portal         {:mvn/version "0.51.0"}
-        cljs-http/cljs-http {:mvn/version "0.1.46"}}} 
+        cljs-http/cljs-http {:mvn/version "0.1.46"}
+
+        ;; logseq-libs: https://github.com/avelino/logseq-libs
+        run.avelino/logseq-libs {:git/url "https://github.com/avelino/logseq-libs.git"
+                                 :git/sha "e9209216fdd59fc71d9fcbfd6110beece06db1b8"}}}

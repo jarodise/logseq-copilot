@@ -1,6 +1,8 @@
 (ns logseq-copilot.settings
   (:require [clojure.string :as str]
             [promesa.core :as p]
+            [run.avelino.logseq-libs :as ls]
+            [run.avelino.logseq-libs.ui :as ls-ui]
             [logseq-copilot.http :as http]))
 
 (declare register-settings)
@@ -13,7 +15,7 @@
   [text type]
   (let [msg-opts #js {:key "logseq-copilot"
                       :timeout 3000}]
-    (js/logseq.UI.showMsg text type msg-opts)))
+    (ls-ui/show-msg! text type msg-opts)))
 
 (def default-settings
   "Default configuration settings for the plugin."
@@ -68,15 +70,15 @@
                   (swap! settings assoc :provider provider)
                   (swap! settings assoc :API_Endpoint formatted-endpoint)
                   (swap! settings assoc :is-verified true)
-                  (js/logseq.updateSettings #js {:API_Endpoint formatted-endpoint
-                                                 :isVerified true})
+                  (ls/update-settings! {:API_Endpoint formatted-endpoint
+                                        :isVerified true})
                   (show-message "API connection verified successfully!" "success")
                   (reset! verification-in-progress false)
                   (resolve true)))
                (p/catch
                 (fn [error]
                   (swap! settings assoc :is-verified false)
-                  (js/logseq.updateSettings #js {:isVerified false})
+                  (ls/update-settings! {:isVerified false})
                   (show-message (str "API verification failed: " error) "error")
                   (reset! verification-in-progress false)
                   (reject error))))))))))
@@ -86,7 +88,7 @@
    Merges saved settings with default values.
    Returns a Promise that resolves when settings are loaded."
   []
-  (-> (js/logseq.App.getUserConfigs)
+  (-> (ls/get-user-configs!)
       (.then (fn [saved-settings]
                (reset! settings (merge default-settings (js->clj saved-settings :keywordize-keys true)))))))
 
@@ -101,7 +103,7 @@
                 (js/console.error "Verification failed:" err)
                 (reset! verification-in-progress false)))
       (.finally (fn []
-                  (js/logseq.updateSettings #js {:Verify_Key false})))))
+                  (ls/update-settings! {:Verify_Key false})))))
 
 (defn handle-settings-changed
   "Handles settings changes in the plugin configuration.
@@ -133,67 +135,66 @@
   "Registers the plugin's settings schema with Logseq.
    Defines all configurable options and their UI representation."
   []
-  (js/logseq.useSettingsSchema
-   (clj->js
-    [{:key "endpoint_section"
-      :type "heading"
-      :title "🔌 API Configuration"
-      :description "Configure your OpenAI-compatible API endpoint"}
-     {:key "API_Endpoint"
-      :type "string"
-      :default ""
-      :title "API Endpoint"
-      :description "Enter your OpenAI-compatible API endpoint (e.g., https://api.example.com/v1)"}
-     {:key "API_Key"
-      :type "string"
-      :default ""
-      :title "API Key"
-      :description "Enter your API key"}
-     {:key "Model"
-      :type "string"
-      :default ""
-      :title "Model Name"
-      :description "Enter the model name (e.g., gpt-3.5-turbo, yi-34b-chat, etc.)"}
-     {:key "Verify_Key"
-      :type "boolean"
-      :default false
-      :title "Verify Connection"
-      :description "Click to verify your API connection"}
-     ;; Model Settings
-     {:key "model_section"
-      :type "heading"
-      :title "⚙️ Model Settings"}
-     {:key "temperature"
-      :type "number"
-      :default 0.7
-      :title "Temperature"
-      :description "Controls randomness (0-1). Lower values make responses more focused"}
-     {:key "max-tokens"
-      :type "number"
-      :default 1000
-      :title "Max Tokens"
-      :description "Maximum length of the response"}
-     ;; Custom Prompts
-     {:key "Custom_Prompt_1"
-      :type "string"
-      :default ""
-      :title "Custom Prompt No.1"
-      :description "Your first custom system prompt (trigger with /copilot1 or Ctrl+Shift+J)"}
-     {:key "Custom_Prompt_2"
-      :type "string"
-      :default ""
-      :title "Custom Prompt No.2"
-      :description "Your second custom system prompt (trigger with /copilot2 or Ctrl+Shift+K)"}
-     {:key "Custom_Prompt_3"
-      :type "string"
-      :default ""
-      :title "Custom Prompt No.3"
-      :description "Your third custom system prompt (trigger with /copilot3 or Ctrl+Shift+L)"}
-     ;; Hotkeys Section
-     {:key "hotkeys_section"
-      :type "heading"
-      :title "⌨️ Default Hotkeys"
-      :description "Default Copilot:    Ctrl+Shift+H\n\nCustom Prompt 1:   Ctrl+Shift+J\n\nCustom Prompt 2:   Ctrl+Shift+K\n\nCustom Prompt 3:   Ctrl+Shift+L\n\nThese shortcuts can be customized in Settings > Shortcuts"}])))
+  (ls/use-settings-schema!
+   [{:key "endpoint_section"
+     :type "heading"
+     :title "🔌 API Configuration"
+     :description "Configure your OpenAI-compatible API endpoint"}
+    {:key "API_Endpoint"
+     :type "string"
+     :default ""
+     :title "API Endpoint"
+     :description "Enter your OpenAI-compatible API endpoint (e.g., https://api.example.com/v1)"}
+    {:key "API_Key"
+     :type "string"
+     :default ""
+     :title "API Key"
+     :description "Enter your API key"}
+    {:key "Model"
+     :type "string"
+     :default ""
+     :title "Model Name"
+     :description "Enter the model name (e.g., gpt-3.5-turbo, yi-34b-chat, etc.)"}
+    {:key "Verify_Key"
+     :type "boolean"
+     :default false
+     :title "Verify Connection"
+     :description "Click to verify your API connection"}
+        ;; Model Settings
+    {:key "model_section"
+     :type "heading"
+     :title "⚙️ Model Settings"}
+    {:key "temperature"
+     :type "number"
+     :default 0.7
+     :title "Temperature"
+     :description "Controls randomness (0-1). Lower values make responses more focused"}
+    {:key "max-tokens"
+     :type "number"
+     :default 1000
+     :title "Max Tokens"
+     :description "Maximum length of the response"}
+        ;; Custom Prompts
+    {:key "Custom_Prompt_1"
+     :type "string"
+     :default ""
+     :title "Custom Prompt No.1"
+     :description "Your first custom system prompt (trigger with /copilot1 or Ctrl+Shift+J)"}
+    {:key "Custom_Prompt_2"
+     :type "string"
+     :default ""
+     :title "Custom Prompt No.2"
+     :description "Your second custom system prompt (trigger with /copilot2 or Ctrl+Shift+K)"}
+    {:key "Custom_Prompt_3"
+     :type "string"
+     :default ""
+     :title "Custom Prompt No.3"
+     :description "Your third custom system prompt (trigger with /copilot3 or Ctrl+Shift+L)"}
+        ;; Hotkeys Section
+    {:key "hotkeys_section"
+     :type "heading"
+     :title "⌨️ Default Hotkeys"
+     :description "Default Copilot:    Ctrl+Shift+H\n\nCustom Prompt 1:   Ctrl+Shift+J\n\nCustom Prompt 2:   Ctrl+Shift+K\n\nCustom Prompt 3:   Ctrl+Shift+L\n\nThese shortcuts can be customized in Settings > Shortcuts"}]))
 
 ;; Register settings change listener
 (js/logseq.onSettingsChanged handle-settings-changed)

@@ -13,7 +13,7 @@
   "author": "jarodise",
   "license": "MIT",
   "devDependencies": {
-    "shadow-cljs": "2.28.19"
+    "shadow-cljs": "2.28.20"
   },
   "dependencies": {
     "@logseq/libs": "0.0.17"
@@ -21,7 +21,7 @@
   "logseq": {
     "id": "logseq-copilot",
     "icon": "dist/icon.svg",
-    "title": "Logseq Copilot CLJS",
+    "title": "Logseq Copilot",
     "main": "dist/index.html",
     "favicon": "dist/icon.svg"
   }
