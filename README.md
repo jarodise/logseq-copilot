@@ -122,6 +122,94 @@ If you encounter any issues or have suggestions, please:
 2. Ensure you have selected a block before using commands
 3. Check the console for any error messages
 
+## Contributing
+
+We welcome contributions! Here's how you can help improve the Logseq Copilot Plugin.
+
+### Development Setup
+
+1. **Prerequisites**
+   - [Node.js](https://nodejs.org/) (LTS version recommended)
+   - [Yarn](https://yarnpkg.com/)
+   - [Babashka](https://github.com/babashka/babashka#installation)
+   - [Java Development Kit (JDK)](https://adoptium.net/) (for ClojureScript development)
+   - [Clojure CLI](https://clojure.org/guides/install_clojure)
+
+2. **Clone and Install Dependencies**
+
+   ```bash
+   git clone https://github.com/avelino/logseq-copilot.git
+   cd logseq-copilot
+   bb deps
+   ```
+
+3. **Development Commands**
+   We use Babashka (bb) tasks for development. Here are the main commands:
+
+   - Start development environment:
+
+     ```bash
+     bb dev
+     ```
+
+     This command:
+     - Cleans the dist directory
+     - Copies resources
+     - Starts Shadow-CLJS watch process for hot reloading
+
+   - Check for dependency updates:
+
+     ```bash
+     bb deps
+     ```
+
+   - Build the plugin:
+
+     ```bash
+     bb build
+     ```
+
+     This creates a production build in the `dist` directory.
+
+### Loading the Plugin in Logseq
+
+1. In Logseq, go to Settings → Developer mode → Turn it on
+2. Click "Load unpacked plugin"
+3. Select the `dist` directory from your development workspace
+4. The plugin will be loaded for development
+
+For hot-reloading during development:
+
+1. Make changes to the code
+2. The Shadow-CLJS watch process will automatically rebuild
+3. In Logseq, click the reload (↻) button next to the plugin name
+
+### Making Contributions
+
+1. Fork the repository
+2. Create a new branch for your feature/fix:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. Make your changes
+4. Test your changes thoroughly
+5. Commit your changes with a clear message:
+
+   ```bash
+   git commit -m "feat: add new feature" # or "fix: resolve issue"
+   ```
+
+6. Push to your fork and submit a Pull Request
+
+### Development Tips
+
+- Use `bb watch-cljs` for just the ClojureScript watch process
+- The `bb portal` command opens the Portal UI for debugging
+- Check the browser console for errors and debug information
+- Test your changes in Logseq before submitting a PR
+
 ## License
 
-MIT License
+MIT License - See [LICENSE](LICENSE)
