@@ -1,10 +1,33 @@
 (ns logseq-copilot.core
-  (:require [promesa.core :as p]
+  (:require [clojure.string :as string]
+            [promesa.core :as p]
             [goog.object :as gobj]
             [run.avelino.logseq-libs :as ls]
             [run.avelino.logseq-libs.ui :as ls-ui]
             [logseq-copilot.settings :as settings]
             [logseq-copilot.http :as http]))
+
+(defn- process-content
+  "Processes and normalizes block content before sending to LLM API.
+   Performs the following transformations:
+   - Normalizes multiple newlines to single newlines
+   - Removes list markers (-, *) from start of lines
+   - Removes empty lines
+   - Standardizes list markers to *
+
+   Parameters:
+   - body: String containing the block content to process
+
+   Returns: Processed string ready for API request"
+  [body]
+  (->> [{:pattern #"\n{3,}" :replacement "\n"} ;; Normalize newlines
+        {:pattern #"^\s*[-*]\s*" :replacement ""} ;; Remove list markers
+        {:pattern #"(?m)^\s*$\n" :replacement ""} ;; Remove empty lines
+        {:pattern "- " :replacement "* "}] ;; Standardize list markers
+       (reduce (fn
+                 [text {:keys [pattern replacement]}]
+                 (string/replace text pattern replacement))
+               (string/trim body))))
 
 (defn insert-block
   "Inserts a new block in Logseq with the given content.
@@ -18,7 +41,7 @@
           _ (js/console.log "[insert-block] Generated block ID:" block-id)
           block (js/logseq.Editor.insertBlock
                  uuid
-                 content
+                 (process-content content)
                  {:customUUID block-id
                   :sibling false
                   :before false
