@@ -26,7 +26,6 @@ A Logseq plugin that integrates with OpenAI-compatible LLM APIs to provide AI as
   - For Ollama (local): http://localhost:11434/v1
   - For Google Gemini: https://generativelanguage.googleapis.com/v1beta
   - For x.ai Grok: https://api.x.ai/v1
-  - For x.ai Grok: https://api.x.ai/v1
   - For other providers: Check their API documentation
 - **API Key**: Your API key
   - Required for cloud providers (Google AI Studio, x.ai, etc.)
